@@ -17,7 +17,7 @@ type config struct {
 func main() {
 	root := flag.String("root", "", "The directory where to start crawling")
 	list := flag.Bool("list", false, "List files only")
-	ext := flag.String("ext", "", "File extension to filter out")
+	ext := flag.String("ext", "", "File extension to search for")
 	size := flag.Int64("size", 0, "Minimum file size")
 	flag.Parse()
 
