@@ -23,3 +23,7 @@ func listFile(path string, w io.Writer) error {
 	_, err := fmt.Fprintln(w, path)
 	return err
 }
+
+func delFile(path string) error {
+	return os.Remove(path)
+}
