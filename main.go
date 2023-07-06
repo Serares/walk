@@ -10,14 +10,22 @@ import (
 )
 
 type config struct {
-	ext  string
+	// extension to filter
+	ext string
+	// min file size
 	size int64
+	// list files
 	list bool
-	del  bool
+	// delete files
+	del bool
+	// log destination writter
 	wLog io.Writer
+	// archive dir
+	archive string
 }
 
 func main() {
+	archive := flag.String("archive", "", "Archive directory")
 	root := flag.String("root", "", "The directory where to start crawling")
 	list := flag.Bool("list", false, "List files only")
 	ext := flag.String("ext", "", "File extension to search for")
@@ -41,11 +49,12 @@ func main() {
 	}
 
 	c := config{
-		ext:  *ext,
-		size: *size,
-		list: *list,
-		del:  *del,
-		wLog: f,
+		archive: *archive,
+		ext:     *ext,
+		size:    *size,
+		list:    *list,
+		del:     *del,
+		wLog:    f,
 	}
 
 	if err := run(*root, f, c); err != nil {
@@ -67,6 +76,12 @@ func run(root string, w io.Writer, cfg config) error {
 
 		if cfg.list {
 			return listFile(path, w)
+		}
+
+		if cfg.archive != "" {
+			if err := archiveFile(cfg.archive, root, path); err != nil {
+				return err
+			}
 		}
 
 		if cfg.del {
