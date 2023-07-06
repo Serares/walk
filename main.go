@@ -48,7 +48,7 @@ func main() {
 		wLog: f,
 	}
 
-	if err := run(*root, os.Stdout, c); err != nil {
+	if err := run(*root, f, c); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
