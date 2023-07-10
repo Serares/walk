@@ -7,11 +7,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type config struct {
 	// extension to filter
-	ext string
+	ext []string
 	// min file size
 	size int64
 	// list files
@@ -28,12 +29,19 @@ func main() {
 	archive := flag.String("archive", "", "Archive directory")
 	root := flag.String("root", "", "The directory where to start crawling")
 	list := flag.Bool("list", false, "List files only")
-	ext := flag.String("ext", "", "File extension to search for")
 	size := flag.Int64("size", 0, "Minimum file size")
 	del := flag.Bool("del", false, "Delete files")
 	logFile := flag.String("log", "", "Log deletes to the specified file")
+	ext := flag.String("ext", "", "Pass a string of the extensions to search for delimited by a space")
+	flag.Usage = func() {
+		fmt.Fprint(os.Stdout, "You can provide the file extenstions that you want to be searched for\n")
+		fmt.Fprint(os.Stdout, "Inside a string delimited by a space\n")
+		fmt.Fprint(os.Stdout, "Example providing the file extensions to search for:\n")
+		fmt.Fprint(os.Stdout, "./nameofthecommand -list -archive /tmp/archivedir -ext \".go .log .md\"\n")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
-
+	// get the following args after parsing the defined flags
 	var (
 		f   = os.Stdout
 		err error
@@ -50,7 +58,7 @@ func main() {
 
 	c := config{
 		archive: *archive,
-		ext:     *ext,
+		ext:     filterEmptyStrings(strings.Split(*ext, " ")),
 		size:    *size,
 		list:    *list,
 		del:     *del,
@@ -69,7 +77,7 @@ func run(root string, w io.Writer, cfg config) error {
 		if err != nil {
 			return err
 		}
-
+		// if no extensions are passed then display all files
 		if filterOut(path, cfg.ext, cfg.size, info) {
 			return nil
 		}

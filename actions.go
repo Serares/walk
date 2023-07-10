@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -9,16 +10,20 @@ import (
 	"path/filepath"
 )
 
-func filterOut(path string, ext string, minSzie int64, info os.FileInfo) bool {
+func filterOut(path string, ext []string, minSzie int64, info os.FileInfo) bool {
 	if info.IsDir() || info.Size() < minSzie {
 		return true
 	}
-
-	if ext != "" && filepath.Ext(path) != ext {
-		return true
+	if len(ext) == 0 {
+		return false
 	}
-
-	return false
+	var isFilter bool = true
+	for _, e := range ext {
+		if e == filepath.Ext(path) || e == "" {
+			isFilter = false
+		}
+	}
+	return isFilter
 }
 
 func listFile(path string, w io.Writer) error {
@@ -35,15 +40,9 @@ func delFile(path string, delLog *log.Logger) error {
 }
 
 func archiveFile(destDir, root, path string) error {
-	info, err := os.Stat(destDir)
-	if err != nil {
+	if err := createDestDir(destDir); err != nil {
 		return err
 	}
-
-	if !info.IsDir() {
-		return fmt.Errorf("%s is not a directory", destDir)
-	}
-
 	// this will get the directory where the file exists relative to the root
 	relDir, err := filepath.Rel(root, filepath.Dir(path))
 	if err != nil {
@@ -51,7 +50,7 @@ func archiveFile(destDir, root, path string) error {
 	}
 	// this will append the .gz extension to the filename
 	dest := fmt.Sprintf("%s.gz", filepath.Base(path))
-	// this is creating the path to where the archive willbe saved
+	// this is creating the path to where the archive will be saved
 	targetPath := filepath.Join(destDir, relDir, dest)
 	// this will create all the directories at once; if they exist it will
 	// do nothing
@@ -80,4 +79,22 @@ func archiveFile(destDir, root, path string) error {
 	}
 
 	return out.Close()
+}
+
+func createDestDir(dirPath string) error {
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err = os.MkdirAll(dirPath, 0755); err != nil {
+				return errors.New("error creating the directory")
+			}
+			return nil
+		}
+		return err
+	}
+
+	if !info.IsDir() {
+		return errors.New("please provide a valid directory name")
+	}
+	return nil
 }
