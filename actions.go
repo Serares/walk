@@ -8,22 +8,52 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
-func filterOut(path string, ext []string, minSzie int64, info os.FileInfo) bool {
-	if info.IsDir() || info.Size() < minSzie {
+func filterOut(path string, cfg config, info os.FileInfo) bool {
+	if info.IsDir() || info.Size() < cfg.size {
 		return true
 	}
-	if len(ext) == 0 {
-		return false
+
+	var isFilter bool = false
+	if len(cfg.ext) > 0 {
+		isFilter = true
 	}
-	var isFilter bool = true
-	for _, e := range ext {
-		if e == filepath.Ext(path) || e == "" {
+	modDate := info.ModTime()
+
+	for _, e := range cfg.ext {
+		// the ext list can never have empty strings
+		// but this case is still covered for testing purposes
+		if e == "" || e == filepath.Ext(path) {
 			isFilter = false
 		}
 	}
+
+	if !isFilter || cfg.dateAfter != "" {
+		isFilter = filterDate(cfg.dateAfter, modDate)
+	}
+
 	return isFilter
+}
+
+// should return false if `filterDate` is before the `fileModTime`
+func filterDate(filterDate string, fileModTime time.Time) bool {
+	var filter bool = false
+	if filterDate == "" {
+		return filter
+	}
+	parsedDate, err := time.Parse(LayoutDate, filterDate)
+	if err != nil {
+		fmt.Println("Error formating or parsing the date can't filter", err)
+		return false
+	}
+
+	if parsedDate.After(fileModTime) {
+		filter = true
+	}
+
+	return filter
 }
 
 func listFile(path string, w io.Writer) error {

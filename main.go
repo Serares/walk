@@ -23,6 +23,8 @@ type config struct {
 	wLog io.Writer
 	// archive dir
 	archive string
+	// filter the files after the modification date provided
+	dateAfter string
 }
 
 func main() {
@@ -33,6 +35,7 @@ func main() {
 	del := flag.Bool("del", false, "Delete files")
 	logFile := flag.String("log", "", "Log deletes to the specified file")
 	ext := flag.String("ext", "", "Pass a string of the extensions to search for delimited by a space")
+	dateAfter := flag.String("dateAfter", "", "Filter files modified after the specified date\n Insert the date in the format YYYY-MM-DD")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stdout, "You can provide the file extenstions that you want to be searched for\n")
 		fmt.Fprint(os.Stdout, "Inside a string delimited by a space\n")
@@ -57,12 +60,13 @@ func main() {
 	}
 
 	c := config{
-		archive: *archive,
-		ext:     filterEmptyStrings(strings.Split(*ext, " ")),
-		size:    *size,
-		list:    *list,
-		del:     *del,
-		wLog:    f,
+		archive:   *archive,
+		ext:       filterEmptyStrings(strings.Split(*ext, " ")),
+		size:      *size,
+		list:      *list,
+		del:       *del,
+		wLog:      f,
+		dateAfter: *dateAfter,
 	}
 
 	if err := run(*root, f, c); err != nil {
@@ -73,12 +77,15 @@ func main() {
 
 func run(root string, w io.Writer, cfg config) error {
 	delLogger := log.New(cfg.wLog, "DELETED FILE:", log.LstdFlags)
+	// will render the dateAfter field as an empty string if the provided
+	// date is crap
+	cfg.dateAfter = validateDate(cfg.dateAfter)
 	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		// if no extensions are passed then display all files
-		if filterOut(path, cfg.ext, cfg.size, info) {
+		if filterOut(path, cfg, info) {
 			return nil
 		}
 

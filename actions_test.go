@@ -26,7 +26,7 @@ func TestFilterOut(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			f := filterOut(tc.file, tc.ext, tc.minSize, info)
+			f := filterOut(tc.file, config{ext: tc.ext, size: tc.minSize}, info)
 
 			if f != tc.expected {
 				t.Errorf("Expected %v but got %v instead\n", tc.expected, f)
