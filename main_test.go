@@ -9,6 +9,7 @@ import (
 	"testing"
 )
 
+// TODO add tests for date filter cases
 func TestRun(t *testing.T) {
 	testCases := []struct {
 		name     string
