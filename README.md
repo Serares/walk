@@ -3,7 +3,7 @@
 - tests are written using table-driven testing
 - because this tool also creates logfiles you can run it with a cronjob and check the logs later on
 
-Example archive some file:
+Example archive some file :
 
 `./walk -root ./ -archive /tmp/archive_tmp -ext ".go .log"`
 
